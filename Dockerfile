@@ -1,23 +1,19 @@
-# Gunakan image Node.js sebagai base image
-FROM node:18
+# Gunakan image Bun sebagai base
+FROM oven/bun:latest
 
-# Set direktori kerja di dalam container
+# Tentukan direktori kerja di dalam container
 WORKDIR /app
 
-# Salin file package.json dan package-lock.json
-COPY package*.json ./
-
-# Install dependencies
-RUN npm install
-
-# Salin semua file proyek ke dalam container
+# Salin file proyek ke container
 COPY . .
 
-# Build aplikasi
-RUN npm run build
+# Install dependensi menggunakan Bun
+RUN bun install
 
-# Ekspose port yang akan digunakan
-EXPOSE 3000
+# Build aplikasi menggunakan Vite
+RUN bun run build
 
-# Jalankan aplikasi
-CMD ["npm", "start"]
+EXPOSE 8080
+
+# Perintah untuk menjalankan aplikasi
+CMD ["bun", "run", "dev", "--host"]

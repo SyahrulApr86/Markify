@@ -11,45 +11,47 @@ Markify is a web application that allows you to easily convert text into markdow
 
 ## Installation
 
+### Using Docker and Docker Compose
+
 1. **Clone this repository**:
 
    ```bash
-   git clone https://github.com/SyahrulApr86/markify.git
+   git clone https://github.com/username/markify.git
    cd markify
    ```
 
-2. **Run the application using Docker**:
+2. **Build and run the application**:
 
    Ensure you have Docker and Docker Compose installed on your system.
 
    ```bash
-   docker compose up --build
+   docker-compose up --build
    ```
 
 3. **Access the application**:
 
-   Open your browser and navigate to `http://localhost:3000`.
+   Open your browser and navigate to `http://localhost:8080`.
 
-## Development
+### Local Development
 
-To start development, ensure you have Node.js and npm installed. Then, follow these steps:
+To start development, ensure you have Node.js and Bun installed. Then, follow these steps:
 
 1. **Install dependencies**:
 
    ```bash
-   npm install
+   bun install
    ```
 
 2. **Run the application**:
 
    ```bash
-   npm start
+   bun run start
    ```
 
 3. **Build the application**:
 
    ```bash
-   npm run build
+   bun run build
    ```
 
 ## Contribution
@@ -62,4 +64,4 @@ This project is licensed under the [MIT License](LICENSE).
 
 ## Contact
 
-For further questions, please contact us at [apriansyah.syahrul@gmail.com](mailto:apriansyah.syahrul@gmail.com).
+For further questions, please contact us at [email@example.com](mailto:email@example.com).
