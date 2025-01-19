@@ -16,7 +16,7 @@ Markify is a web application that allows you to easily convert text into markdow
 1. **Clone this repository**:
 
    ```bash
-   git clone https://github.com/username/markify.git
+   git clone https://github.com/SyahrulApr86/markify.git
    cd markify
    ```
 
