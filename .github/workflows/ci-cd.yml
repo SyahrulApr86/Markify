@@ -24,12 +24,12 @@ jobs:
       # Build Docker image
       - name: Build Docker image
         run: |
-          docker-compose -f docker-compose.yml build
+          docker compose -f docker-compose.yml build
 
       # Push Docker image to Docker Hub
       - name: Push Docker image
         run: |
-          docker-compose push
+          docker compose push
 
       # Deploy to VPS using SSH with Password
       - name: Deploy to VPS
@@ -44,4 +44,4 @@ jobs:
             cd /root/CICD/Markify
             # Pull the latest changes and run the application
             docker compose pull
-            docker compose up --build -d 
+            docker compose up -d 
