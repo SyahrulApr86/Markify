@@ -29,43 +29,7 @@ jobs:
           docker compose push
 
       # ---------------------------------------
-      # STEP 1: Wait for Status Checks
-      # ---------------------------------------
-      - name: Wait for Required Status Checks to Complete
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const { data: statuses } = await github.repos.listCommitStatusesForRef({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              ref: context.sha,
-            });
-            
-            const requiredContexts = ["build"]; // Ubah sesuai status checks yang dibutuhkan
-            let allSuccess = false;
-            const maxRetries = 20; // Jumlah maksimum percobaan
-            let retries = 0;
-
-            while (!allSuccess && retries < maxRetries) {
-              console.log("Checking statuses...");
-              allSuccess = requiredContexts.every((context) =>
-                statuses.some((status) => status.context === context && status.state === "success")
-              );
-              if (!allSuccess) {
-                console.log("Required statuses are not yet successful. Retrying in 10 seconds...");
-                await new Promise((resolve) => setTimeout(resolve, 10000)); // Tunggu 10 detik
-                retries++;
-              }
-            }
-
-            if (!allSuccess) {
-              throw new Error("Required statuses did not succeed in time.");
-            }
-          env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      # ---------------------------------------
-      # STEP 2: Create the GitHub Deployment
+      # STEP 1: Create the GitHub Deployment
       # ---------------------------------------
       - name: Create GitHub Deployment for Production
         id: create_deployment
@@ -74,7 +38,7 @@ jobs:
           RESPONSE=$(curl -s -X POST \
             -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
             -H "Accept: application/vnd.github+json" \
-            -d '{"ref":"main","environment":"production","required_contexts":[]}' \
+            -d '{"ref":"main","environment":"production"}' \
             https://api.github.com/repos/${{ github.repository }}/deployments)
           
           echo "GitHub API Response:"
@@ -111,7 +75,7 @@ jobs:
             docker compose up -d
 
       # ---------------------------------------
-      # STEP 3: Create a "success" Deployment Status
+      # STEP 2: Create a "success" Deployment Status
       # ---------------------------------------
       - name: Set Deployment Status as Success
         run: |
