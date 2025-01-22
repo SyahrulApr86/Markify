@@ -81,6 +81,6 @@ jobs:
             -d '{
               "state":"success",
               "description":"Deployment successful",
-              "environment_url":"http://your-production-url.com"
+              "environment_url":"http://markify.rul.blue"
             }' \
             https://api.github.com/repos/${{ github.repository }}/deployments/$DEPLOYMENT_ID/statuses
