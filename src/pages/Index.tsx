@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { Copy, FileText, Eye } from "lucide-react";
 import MarkdownPreview from '@/components/MarkdownPreview';
 import { cn } from '@/lib/utils';
-
+ 
 const Index = () => {
   const [input, setInput] = useState('');
   const [preview, setPreview] = useState('');
