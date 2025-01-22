@@ -43,5 +43,5 @@ jobs:
             # Navigate to the directory where the Markify app is located on the VPS
             cd /root/CICD/Markify
             # Pull the latest changes and run the application
-            docker-compose pull
-            docker-compose up -d
+            docker compose pull
+            docker compose up --build -d 
