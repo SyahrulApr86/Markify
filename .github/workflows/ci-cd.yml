@@ -20,12 +20,10 @@ jobs:
 
       - name: Build Docker image
         run: |
-          echo "Building Docker image..."
           docker compose -f docker-compose.yml build
 
       - name: Push Docker image
         run: |
-          echo "Pushing Docker image to Docker Hub..."
           docker compose push
 
       # ---------------------------------------
@@ -34,28 +32,21 @@ jobs:
       - name: Create GitHub Deployment for Production
         id: create_deployment
         run: |
-          echo "Creating GitHub deployment for production..."
+          # Call GitHub's Deployments API
           RESPONSE=$(curl -s -X POST \
             -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Accept: application/vnd.github+json" \
             -d '{"ref":"main","environment":"production"}' \
             https://api.github.com/repos/${{ github.repository }}/deployments)
           
-          echo "GitHub API Response:"
-          echo "$RESPONSE"
-
           # Extract the 'id' field from the JSON response
           DEPLOYMENT_ID=$(echo "$RESPONSE" | jq -r '.id')
 
-          if [ "$DEPLOYMENT_ID" == "null" ] || [ -z "$DEPLOYMENT_ID" ]; then
-            echo "Failed to create deployment. Response from GitHub API:"
-            echo "$RESPONSE"
-            exit 1
-          fi
-
-          echo "Deployment ID: $DEPLOYMENT_ID"
+          echo "GitHub API response:"
+          echo "$RESPONSE"
 
           # Pass the deployment_id to the next steps
+          # Using the new environment file approach (recommended),
+          # or you can still use ::set-output if needed
           echo "deployment_id=$DEPLOYMENT_ID" >> $GITHUB_OUTPUT
 
       # Deploy to VPS using SSH with Password
@@ -67,11 +58,10 @@ jobs:
           password: ${{ secrets.VPS_PASSWORD }}
           port: 22
           script: |
-            echo "Deploying application to VPS..."
+            # Navigate to the directory where the Markify app is located
             cd /root/CICD/Markify
-            echo "Pulling latest Docker images..."
+            # Pull the latest changes and run the application
             docker compose pull
-            echo "Starting the application using Docker Compose..."
             docker compose up -d
 
       # ---------------------------------------
@@ -79,27 +69,7 @@ jobs:
       # ---------------------------------------
       - name: Set Deployment Status as Success
         run: |
-          echo "Setting deployment status to 'success'..."
-          DEPLOYMENT_ID=${{ steps.create_deployment.outputs.deployment_id }}
-
-          if [ -z "$DEPLOYMENT_ID" ]; then
-            echo "Deployment ID not found. Cannot update deployment status."
-            exit 1
-          fi
-
-          RESPONSE=$(curl -s -X POST \
+          curl -s -X POST \
             -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Accept: application/vnd.github+json" \
-            -d '{"state":"success", "description":"Deployment successful", "environment":"production"}' \
-            https://api.github.com/repos/${{ github.repository }}/deployments/$DEPLOYMENT_ID/statuses)
-
-          echo "GitHub API Response for setting status:"
-          echo "$RESPONSE"
-
-          if echo "$RESPONSE" | grep -q '"state": "success"'; then
-            echo "Deployment status successfully set to 'success'."
-          else
-            echo "Failed to set deployment status. Response from GitHub API:"
-            echo "$RESPONSE"
-            exit 1
-          fi
+            -d '{"state":"success"}' \
+            https://api.github.com/repos/${{ github.repository }}/deployments/${{ steps.create_deployment.outputs.deployment_id }}/statuses
