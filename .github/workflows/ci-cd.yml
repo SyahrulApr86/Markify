@@ -33,10 +33,16 @@ jobs:
 
       # Create Deployment for Production
       - name: Create GitHub Deployment for Production
+        id: create_deployment
         run: |
-          curl -XPOST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          RESPONSE=$(curl -XPOST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
           -d '{"ref":"main","environment":"production"}' \
-          https://api.github.com/repos/${{ github.repository }}/deployments
+          https://api.github.com/repos/${{ github.repository }}/deployments)
+          
+          # Extract deployment ID
+          DEPLOYMENT_ID=$(echo $RESPONSE | jq .id)
+          echo "Deployment ID: $DEPLOYMENT_ID"
+          echo "::set-output name=deployment_id::$DEPLOYMENT_ID"
 
       # Deploy to VPS using SSH with Password
       - name: Deploy to VPS
@@ -56,7 +62,7 @@ jobs:
       # Update Deployment Status as Success
       - name: Set Deployment Status as Success
         run: |
+          DEPLOYMENT_ID=${{ steps.create_deployment.outputs.deployment_id }}
           curl -XPATCH -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
           -d '{"state":"success"}' \
-          https://api.github.com/repos/${{ github.repository }}/deployments/${{ steps.deploy.outputs.deployment_id }}
-
+          https://api.github.com/repos/${{ github.repository }}/deployments/$DEPLOYMENT_ID
