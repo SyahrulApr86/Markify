@@ -8,40 +8,48 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
-      # Checkout code
       - name: Checkout code
         uses: actions/checkout@v2
 
-      # Docker Hub login
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      # Build and push Docker images
       - name: Build Docker image
-        run: docker compose -f docker-compose.yml build
+        run: |
+          docker compose -f docker-compose.yml build
 
       - name: Push Docker image
-        run: docker compose push
-
-      # Create deployment and capture ID
-      - name: Create GitHub Deployment
-        id: create-deployment
         run: |
-          RESPONSE=$(curl -s -XPOST \
-          -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-          -H "Accept: application/vnd.github.v3+json" \
-          -d '{"ref":"main","environment":"production","auto_merge":false}' \
-          https://api.github.com/repos/${{ github.repository }}/deployments)
-          
-          DEPLOYMENT_ID=$(echo $RESPONSE | jq -r '.id')
-          echo "DEPLOYMENT_ID=$DEPLOYMENT_ID" >> $GITHUB_OUTPUT
+          docker compose push
 
-      # Deploy to VPS
+      # ---------------------------------------
+      # STEP 1: Create the GitHub Deployment
+      # ---------------------------------------
+      - name: Create GitHub Deployment for Production
+        id: create_deployment
+        run: |
+          # Call GitHub's Deployments API
+          RESPONSE=$(curl -s -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -d '{"ref":"main","environment":"production"}' \
+            https://api.github.com/repos/${{ github.repository }}/deployments)
+          
+          # Extract the 'id' field from the JSON response
+          DEPLOYMENT_ID=$(echo "$RESPONSE" | jq -r '.id')
+
+          echo "GitHub API response:"
+          echo "$RESPONSE"
+
+          # Pass the deployment_id to the next steps
+          # Using the new environment file approach (recommended),
+          # or you can still use ::set-output if needed
+          echo "deployment_id=$DEPLOYMENT_ID" >> $GITHUB_OUTPUT
+
+      # Deploy to VPS using SSH with Password
       - name: Deploy to VPS
         uses: appleboy/ssh-action@v0.1.5
         with:
@@ -50,15 +58,18 @@ jobs:
           password: ${{ secrets.VPS_PASSWORD }}
           port: 22
           script: |
+            # Navigate to the directory where the Markify app is located
             cd /root/CICD/Markify
+            # Pull the latest changes and run the application
             docker compose pull
             docker compose up -d
 
-      # Update deployment status
-      - name: Update Deployment Status
+      # ---------------------------------------
+      # STEP 2: Create a "success" Deployment Status
+      # ---------------------------------------
+      - name: Set Deployment Status as Success
         run: |
-          curl -XPOST \
-          -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-          -H "Accept: application/vnd.github.v3+json" \
-          -d '{"state":"success"}' \
-          https://api.github.com/repos/${{ github.repository }}/deployments/${{ steps.create-deployment.outputs.DEPLOYMENT_ID }}/statuses
+          curl -s -X POST \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -d '{"state":"success"}' \
+            https://api.github.com/repos/${{ github.repository }}/deployments/${{ steps.create_deployment.outputs.deployment_id }}/statuses
